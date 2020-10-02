@@ -1,3 +1,4 @@
-char wifiSSID[] = "<network name>";  
-char wifiPassword[] = "<network password>";    
+
+char wifiSSID[] = "<network name>";          // replace with your own wifi name
+char wifiPassword[] = "<network password>";  // replace with your own wifi password   
 
