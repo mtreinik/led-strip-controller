@@ -2,8 +2,6 @@
 
 ## Software
 
-### Client
-
 ### API
 
 The led API can receive a number of commands. Parameters for commands
