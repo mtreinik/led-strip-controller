@@ -10,7 +10,7 @@ The led API can receive a number of commands. Parameters for commands
 are given as two-digit hex numbers.
 
 Commands are sent as query parameters for a HTTP GET request to the
-server. For example `http://10.0.0.80/?s808000`.
+server. For example `http://<hostname>/?s808000`.
 
 
 | Command | Description | Format | Example | Explanation of example |
