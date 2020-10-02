@@ -37,6 +37,9 @@ uint32_t spriteBackground = 0x000000;
 uint32_t spritePosition = 0;
 int spriteSpeed = 0;
 int spriteVisible = 0;
+unsigned long millisBefore = millis();
+int SUBPIXEL_SHIFT = 8;
+int SUBPIXEL_MASK = 0xff;
 
 String ledStatus = "OK";
 
@@ -75,18 +78,30 @@ void setup() {
 }
 
 void drawSprite() {
+  unsigned long millisNow = millis();
   if (spriteVisible) {
     for (int i = 0; i < NUMPIXELS; i++) {
       strip.setPixelColor(i, spriteBackground);
+    }    
+    int spritePixelPosition = spritePosition >> SUBPIXEL_SHIFT;
+    int spriteSubpixelPosition = spritePosition & SUBPIXEL_MASK;
+    int spriteSubpixelPositionRest = SUBPIXEL_MASK + 1 - spriteSubpixelPosition;
+    
+    uint32_t color = mixColors(spriteBackground, sprite[0], spriteSubpixelPosition, spriteSubpixelPositionRest, SUBPIXEL_SHIFT);
+    strip.setPixelColor(spritePixelPosition % NUMPIXELS, color);
+
+    for (int i = 1; i < spriteSize; i++) {
+      color = mixColors(sprite[i-1], sprite[i], spriteSubpixelPosition, spriteSubpixelPositionRest, SUBPIXEL_SHIFT);
+      strip.setPixelColor((spritePixelPosition + i) % NUMPIXELS, color);
     }
-    for (int i = 0; i < spriteSize; i++) {
-      int spritePixelPosition = ((spritePosition >> 4) + i) % NUMPIXELS;
-      strip.setPixelColor(spritePixelPosition, sprite[i]);
-    }
+
+    color = mixColors(sprite[spriteSize-1], spriteBackground, spriteSubpixelPosition, spriteSubpixelPositionRest, SUBPIXEL_SHIFT);
+    strip.setPixelColor((spritePixelPosition+ spriteSize) % NUMPIXELS, color);
+    
     strip.show();
-    // TODO use millis() to make position depend on actual time and speed
-    spritePosition += spriteSpeed;
+    spritePosition += spriteSpeed * (millisNow - millisBefore);
   }
+  millisBefore = millisNow;
 }
 
 void updateLeds() {
@@ -171,7 +186,7 @@ void processLedCommand(uint8_t line[]) {
       pos += 6;
       spriteSize = getHexByte(pos, line);
       pos += 2;
-      spritePosition = getHexByte(pos, line) << 4;
+      spritePosition = getHexByte(pos, line) << SUBPIXEL_SHIFT;
       pos += 2;
       spriteSpeed = getHexByte(pos, line) - 128;
       pos += 2;
@@ -199,7 +214,6 @@ void loop() {
       bool foundNewline = false;
       bool timeout = false;
       while (client.connected() && bytesRead < MAX_LINE_LENGTH && !foundNewline && !timeout) {
-        updateLeds();
         if (millis() > timeoutMillis) {
           timeout = true;
         }
