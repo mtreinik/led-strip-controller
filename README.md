@@ -41,3 +41,5 @@ The led strip is powered by a 5V 10A switching power supply.
 |5    | data to led strip     | green     |
 |6    | clock to led strip    | yellow    |
 
+![Feather M0 Pinouts](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/feather_m0_wifi_pinout_v1.2-1.png)
+
