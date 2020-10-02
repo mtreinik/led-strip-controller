@@ -15,22 +15,22 @@ server. For example `http://10.0.0.80/?s808000`.
 
 | Command | Description | Format | Example | Explanation of example |
 |---------|-------------|--------|---------|------------------------|
-| a       | set colors from an array | a[number of pixels][r1][g1][b1][r2][g2][b2]... | a03ff0000ffff0000ff00 | set three colors: red, yellow and green |
+| c       | clear all pixels | c | c | turns off all pixels |
 | s       | set all pixels to a single color | s[r][g][b] | sff00ff | set all pixels to bright magenta |
-| c       | clear all pixels | c | turns off all pixels |
 | p       | set a single pixel | p[position][r][g][b] | p28ffffff | set pixel number 40 (0x28 in hex) to white |
+| a       | set colors from an array | a[number of pixels][r1][g1][b1][r2][g2][b2]... | a03ff0000ffff0000ff00 | set three colors: red, yellow and green |
 | m       | draw a moving sprite | m[background r][background g][background b][size of sprite][sprite position][sprite speed][r1][g1][b1][r2][g2][b2]... | m000000040084000500003000006000ffffff | animate a white pixel with green fading tail quite slowly slowly on a black background |
 
 ## Electronics
 
-The led strip is an [Adafruit DotStar Digital LED
+* LEDs: [Adafruit DotStar Digital LED
 Strip](https://www.adafruit.com/product/2239?length=4) that has 240
-individually-addressable RGB LEDs. It is controlled by an [Adafruit
+individually-addressable RGB LEDs
+* microcontroller: [Adafruit
 Feather M0 WiFi - ATSAMD21 +
 ATWINC1500](https://www.adafruit.com/product/3010) Arduino board with
 WiFi capability.
-
-The led strip is powered by a 5V 10A switching power supply.
+* power supply: 5V 10A switching power supply for the LEDs
 
 ### Pins used on the controller
 
