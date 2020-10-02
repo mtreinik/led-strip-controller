@@ -32,7 +32,7 @@ WiFi capability.
 
 The led strip is powered by a 5V 10A switching power supply.
 
-### Pinouts used on the controller
+### Pins used on the controller
 
 | Pin | Description           |Wire color | 
 |-----|-----------------------|-----------|
@@ -41,5 +41,6 @@ The led strip is powered by a 5V 10A switching power supply.
 |5    | data to led strip     | green     |
 |6    | clock to led strip    | yellow    |
 
-![Feather M0 Pinouts](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/feather_m0_wifi_pinout_v1.2-1.png)
+![Feather M0 annotated with pins in use](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/feather.png)
 
+[Feather M0 pinouts without annotations](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/feather_m0_wifi_pinout_v1.2-1.png)
