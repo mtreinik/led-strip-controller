@@ -118,62 +118,74 @@ void processLedCommand(uint8_t line[]) {
   int pos = 6;
   uint8_t command = line[pos++];
   
-  if (command == 'a') {
-    ledStatus = "OK: command a";
-    uint8_t numPixels = getHexByte(pos, line);
-    pos += 2;
-    for (int i = 0; i < numPixels && i < NUMPIXELS; i++) {
-      uint32_t color = getHexColor(pos, line);
-      strip.setPixelColor(i, color);
+  switch (command) {
+    case 'c':
+      ledStatus = "OK: command c";
+      strip.clear();
+      for (int i = 0; i < NUMPIXELS; i++) {
+        strip.setPixelColor(i, 0x000000);
+      }
+      strip.show();
+      break;
+    case 's':
+      {
+        ledStatus = "OK: command s";
+        uint32_t color = getHexColor(pos, line);
+        for (int i = 0; i < NUMPIXELS; i++) {
+          strip.setPixelColor(i, color);
+        }
+        strip.show();
+      }
+      break;
+    case 'p':
+      {
+        ledStatus = "OK: command p ";
+        int pixelPosition = getHexByte(pos, line);
+        pos += 2;
+        uint32_t color = getHexColor(pos, line);
+        for (int i = 0; i < NUMPIXELS; i++) {
+          strip.setPixelColor(pixelPosition, color);
+        }
+        strip.show();
+      }
+      break;
+    case 'a':
+      {
+        ledStatus = "OK: command a";
+        uint8_t numPixels = getHexByte(pos, line);
+        pos += 2;
+        for (int i = 0; i < numPixels && i < NUMPIXELS; i++) {
+          uint32_t color = getHexColor(pos, line);
+          strip.setPixelColor(i, color);
+          pos += 6;
+        }
+        for (int i = numPixels; i < NUMPIXELS; i++) {
+          strip.setPixelColor(i, 0x000000);
+        }
+        strip.show();
+      }
+      break;
+    case 'm':
+      ledStatus = "OK: command m";
+      spriteBackground = getHexColor(pos, line);
       pos += 6;
-    }
-    for (int i = numPixels; i < NUMPIXELS; i++) {
-      strip.setPixelColor(i, 0x000000);
-    }
-    strip.show();      
-  } else if (command == 's') {
-    ledStatus = "OK: command s";
-    uint32_t color = getHexColor(pos, line);
-    for (int i = 0; i < NUMPIXELS; i++) {
-      strip.setPixelColor(i, color);
-    }
-    strip.show();
-  } else if (command == 'm') {
-    ledStatus = "OK: command m";
-    spriteBackground = getHexColor(pos, line);
-    pos += 6;
-    spriteSize = getHexByte(pos, line);
-    pos += 2;
-    spritePosition = getHexByte(pos, line) << 4;
-    pos += 2;    
-    spriteSpeed = getHexByte(pos, line) - 128;
-    pos += 2;
-    for (int i = 0; i < spriteSize; i++) {
-      uint32_t color = getHexColor(pos, line);
-      sprite[i] = color;
-      pos += 6;
-    }
-    spriteVisible = 1;
-  } else if (command == 'c') {
-    ledStatus = "OK: command c";
-    strip.clear();
-    for (int i = 0; i < NUMPIXELS; i++) {
-      strip.setPixelColor(i, 0x000000);
-    }
-    strip.show();
-  } else if (command == 'p') {
-    ledStatus = "OK: command p ";
-    int pixelPosition = getHexByte(pos, line);
-    pos += 2;
-    uint32_t color = getHexColor(pos, line);
-    for (int i = 0; i < NUMPIXELS; i++) {
-      strip.setPixelColor(pixelPosition, color);
-    }
-    strip.show();
-  } else {
-    ledStatus = "Unknown command";
-    Serial.println("Unknown command");
-    Serial.println(command);
+      spriteSize = getHexByte(pos, line);
+      pos += 2;
+      spritePosition = getHexByte(pos, line) << 4;
+      pos += 2;
+      spriteSpeed = getHexByte(pos, line) - 128;
+      pos += 2;
+      for (int i = 0; i < spriteSize; i++) {
+        uint32_t color = getHexColor(pos, line);
+        sprite[i] = color;
+        pos += 6;
+      }
+      spriteVisible = 1;
+      break;
+    default:
+      ledStatus = "Unknown command";
+      Serial.println("Unknown command");
+      Serial.println(command);
   }  
 }
 
@@ -262,10 +274,12 @@ void printWiFiStatusToSerialPort() {
   Serial.println(WiFi.SSID());
 
   Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());
+  IPAddress ip = WiFi.localIP();
+  Serial.println(ip);
 
   Serial.print("signal strength (RSSI):");
-  Serial.print(WiFi.RSSI());
+  long rssi = WiFi.RSSI();
+  Serial.print(rssi);
   Serial.println(" dBm");
 }
 
