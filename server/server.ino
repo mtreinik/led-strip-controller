@@ -14,6 +14,7 @@
 #include <WiFi101.h>
 
 #include "hex.h"
+#include "color.h"
 #include "credentials.h"
 
 #define NUMPIXELS 240 // Number of LEDs in strip
@@ -83,6 +84,8 @@ void setup() {
 
     // wait 12 seconds for connection:
     delay(12000);
+
+    initializeGammaTables();    
   }
   
   // start the web server on port 80
