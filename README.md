@@ -46,7 +46,7 @@ microcontroller and LED strip (on the right) are connected:
 | Pin | Description           |Wire color | 
 |-----|-----------------------|-----------|
 |GND  | ground                | black     |
-|USB  | 5V power              | red       |
+|VBUS | 5V power              | red       |
 |5    | data to led strip     | green     |
 |6    | clock to led strip    | yellow    |
 
