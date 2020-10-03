@@ -1,5 +1,7 @@
 # Web controller for RGB led strip
 
+## 
+
 ## Software
 
 ### API
@@ -31,6 +33,13 @@ Feather M0 WiFi - ATSAMD21 +
 ATWINC1500](https://www.adafruit.com/product/3010) Arduino board with
 WiFi capability.
 * power supply: 5V 10A switching power supply for the LEDs
+
+### Schematic
+
+Here is a schematic of how the power supply (on the left),
+microcontroller and LED strip (on the right) are connected:
+
+![Schematic of the control circuitry](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/schematic.png)
 
 ### Pins used on the controller
 
