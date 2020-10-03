@@ -10,7 +10,7 @@ uint32_t getHexDigit(uint32_t result, uint8_t digit) {
   return (result << 4) + nextInt;
 }
 
-uint32_t getHexColor(int position, uint8_t line[]) {
+uint32_t getHexColor(int &position, uint8_t line[]) {
   uint32_t result = 0;
   for (int i = 0; i < 6; i++) {
     result = getHexDigit(result, line[position + i]);
@@ -19,7 +19,7 @@ uint32_t getHexColor(int position, uint8_t line[]) {
   return result;
 }
 
-unsigned char getHexByte(int position, uint8_t line[]) {
+unsigned char getHexByte(int &position, uint8_t line[]) {
   uint8_t result = getHexDigit(0, line[position]);
   result = getHexDigit(result, line[position + 1]);
   position += 2;
