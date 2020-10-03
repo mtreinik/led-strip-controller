@@ -66,7 +66,7 @@ void setup() {
 
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(wifiSSID, wifiPassword);
-    
+
     // wait 12 seconds for connection:
     delay(12000);
   }
@@ -110,20 +110,23 @@ void updateLeds() {
 
 /**
  * Commands
- * a = set colors from an array
- *     format: a[number of pixels][r1][g1][b1][r2][g2][b2]...
+ * c = clear all pixels
+ *     format: c
  *     
  * s = set all pixels to a single color
  *     format: a[r][g][b]
  *     
- * c = clear all pixels
- *     format: c
+ * p = set a single pixel
+ *     format: p[position][r][g][b]
+ *     
+ * a = set colors from an array
+ *     format: a[number of pixels][r1][g1][b1][r2][g2][b2]...
  *     
  * m = draw a moving sprite
  *     format: m[background r][background g][background b][size of sprite][sprite position][sprite speed][r1][g1][b1][r2][g2][b2]...
  * 
- * p = set a single pixel
- *     format: p[position][r][g][b]
+ * g = draw a gradiant
+ *     format: g[start position][end position][r1][g1][b1][r2][g2][b2]
  */
 void processLedCommand(uint8_t line[]) {
   if (line[5] != '?') {
@@ -156,7 +159,6 @@ void processLedCommand(uint8_t line[]) {
       {
         ledStatus = "OK: command p ";
         int pixelPosition = getHexByte(pos, line);
-        pos += 2;
         uint32_t color = getHexColor(pos, line);
         for (int i = 0; i < NUMPIXELS; i++) {
           strip.setPixelColor(pixelPosition, color);
@@ -167,14 +169,12 @@ void processLedCommand(uint8_t line[]) {
     case 'a':
       {
         ledStatus = "OK: command a";
-        uint8_t numPixels = getHexByte(pos, line);
-        pos += 2;
-        for (int i = 0; i < numPixels && i < NUMPIXELS; i++) {
+        uint8_t arraySize = getHexByte(pos, line);
+        for (int i = 0; i < arraySize && i < NUMPIXELS; i++) {
           uint32_t color = getHexColor(pos, line);
-          strip.setPixelColor(i, color);
-          pos += 6;
+          strip.setPixelColor(i, color);          
         }
-        for (int i = numPixels; i < NUMPIXELS; i++) {
+        for (int i = arraySize; i < NUMPIXELS; i++) {
           strip.setPixelColor(i, 0x000000);
         }
         strip.show();
@@ -183,19 +183,31 @@ void processLedCommand(uint8_t line[]) {
     case 'm':
       ledStatus = "OK: command m";
       spriteBackground = getHexColor(pos, line);
-      pos += 6;
       spriteSize = getHexByte(pos, line);
-      pos += 2;
       spritePosition = getHexByte(pos, line) << SUBPIXEL_SHIFT;
-      pos += 2;
       spriteSpeed = getHexByte(pos, line) - 128;
-      pos += 2;
       for (int i = 0; i < spriteSize; i++) {
         uint32_t color = getHexColor(pos, line);
         sprite[i] = color;
-        pos += 6;
       }
       spriteVisible = 1;
+      break;
+    case 'g':
+      {
+        int startPosition = getHexByte(pos, line);
+        int endPosition = getHexByte(pos, line);
+        int gradientLength = endPosition - startPosition + 1;
+        
+        uint32_t startColor = getHexColor(pos, line);
+        uint32_t endColor = getHexColor(pos, line);
+        for (int i = 0; i < gradientLength; i++) {
+          int endColorWeight = i * 255 / (gradientLength - 1);
+          int startColorWeight = 255 - endColorWeight;
+          uint32_t color = mixColors(startColor, endColor, startColorWeight, endColorWeight, 8);
+          strip.setPixelColor((startPosition + i) % NUMPIXELS, color);
+        }
+        strip.show();
+      }
       break;
     default:
       ledStatus = "Unknown command";

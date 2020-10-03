@@ -15,8 +15,9 @@ server. For example `http://<hostname>/?s808000`.
 |---------|-------------|--------|---------|------------------------|
 | c       | clear all pixels | c | c | turns off all pixels |
 | s       | set all pixels to a single color | s[r][g][b] | sff00ff | set all pixels to bright magenta |
-| p       | set a single pixel | p[position][r][g][b] | p28ffffff | set pixel number 40 (0x28 in hex) to white |
+| p       | draw a single pixel | p[position][r][g][b] | p28ffffff | set pixel number 40 (0x28 in hex) to white |
 | a       | set colors from an array | a[number of pixels][r1][g1][b1][r2][g2][b2]... | a03ff0000ffff0000ff00 | set three colors: red, yellow and green |
+| g       | draw a color gradient | g[start position][end position][r1][g1][b1][r2][g2][b2] | g0010ff0000ffff00 | draw a 16 pixel gradient from red to yellow at the start of the led strip |
 | m       | draw a moving sprite | m[background r][background g][background b][size of sprite][sprite position][sprite speed][r1][g1][b1][r2][g2][b2]... | m000000040084000500003000006000ffffff | animate a white pixel with green fading tail quite slowly slowly on a black background |
 
 ## Electronics
