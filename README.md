@@ -53,3 +53,14 @@ microcontroller and LED strip (on the right) are connected:
 ![Feather M0 annotated with pins in use](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/feather.png)
 
 [Feather M0 pinouts without annotations](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/feather_m0_wifi_pinout_v1.2-1.png)
+
+## Enclosure
+
+I 3D printed an enclosure with a sliding lid for the elecronics:
+
+![Enclosure for LED controller electronics](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/enclosure.png)
+
+Here are the 3D models of the bottom and lid of the enclosure:
+
+- [led_strip_controller_enclosure_bottom.stl](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/models/led_strip_controller_enclosure_bottom.stl)
+- [led_strip_controller_enclosure_lid.stl](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/models/led_strip_controller_enclosure_lid.stl)
