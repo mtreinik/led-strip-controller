@@ -9,8 +9,8 @@ int roundToInt(double val) {
 
 void initializeGammaTables() {
   for (int i = 0; i < GAMMA_VALUES; i++) {
-    gammaTable[i] = roundToInt(pow((double) i / GAMMA_VALUES, 2.2) * GAMMA_VALUES);
-    inverseGammaTable[i] = roundToInt(pow((double) i / GAMMA_VALUES, 1/2.2) * GAMMA_VALUES);
+    gammaTable[i] = roundToInt(pow((double) i / GAMMA_VALUES, GAMMA) * GAMMA_VALUES);
+    inverseGammaTable[i] = roundToInt(pow((double) i / GAMMA_VALUES, 1.0 / GAMMA) * GAMMA_VALUES);
   }
 }
 
