@@ -19,10 +19,11 @@ server. For example `http://<hostname>/?s808000`.
 | a       | set colors from an array | a[number of pixels][r1][g1][b1][r2][g2][b2]... | a03ff0000ffff0000ff00 | set three colors: red, yellow and green |
 | g       | draw a color gradient | g[start position][end position][r1][g1][b1][r2][g2][b2] | g0010ff0000ffff00 | draw a 16 pixel gradient from red to yellow at the start of the led strip |
 | m       | draw a moving sprite | m[background r][background g][background b][size of sprite][sprite position][sprite speed][r1][g1][b1][r2][g2][b2]... | m000000040084000500003000006000ffffff | animate a white pixel with green fading tail quite slowly slowly on a black background |
+| f       | animate flames        | f[fuel amount][damping amount] | f2f10 | 
 
 ## Electronics
 
-* LEDs: [Adafruit DotStar Digital LED
+* LEDs: 4 meter [Adafruit DotStar Digital LED
 Strip](https://www.adafruit.com/product/2239?length=4) that has 240
 individually-addressable RGB LEDs
 * microcontroller: [Adafruit

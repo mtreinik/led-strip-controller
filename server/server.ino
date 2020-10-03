@@ -31,15 +31,21 @@ WiFiServer server(80);
 uint8_t currentLine[MAX_LINE_LENGTH+1];
 char buf[MAX_LINE_LENGTH+1] = {};
 
+bool spriteMode = false;
 uint32_t sprite[NUMPIXELS];
 int spriteSize = 0;
 uint32_t spriteBackground = 0x000000;
 uint32_t spritePosition = 0;
 int spriteSpeed = 0;
-int spriteVisible = 0;
 unsigned long millisBefore = millis();
 int SUBPIXEL_SHIFT = 8;
 int SUBPIXEL_MASK = 0xff;
+
+bool fireMode = false;
+int fireFuelAmount = 0;
+int fireDampingAmount = 0;
+uint32_t fuel[NUMPIXELS] = { 0 };
+uint32_t fire[NUMPIXELS] = { 0 };
 
 String ledStatus = "OK";
 
@@ -77,9 +83,35 @@ void setup() {
   printWiFiStatusToSerialPort();
 }
 
-void drawSprite() {
+void updateLeds() {
   unsigned long millisNow = millis();
-  if (spriteVisible) {
+  if (fireMode) {
+    // spread previous fuel
+    for (int i = 1; i < NUMPIXELS - 1; i++) {
+      fuel[i] = (fuel[i - 1] + fuel[i] << 1 + fuel[i + 1]) >> 2;
+    }
+    fuel[0] = (fuel[NUMPIXELS - 1] + fuel[0] << 1 + fuel[1]) >> 2;
+    fuel[NUMPIXELS-1] = (fuel[NUMPIXELS - 2] + fuel[NUMPIXELS - 1] << 1 + fuel[0]) >> 2;
+
+    // add fuel to random place
+    int fuelToAdd = fireFuelAmount * (millisNow - millisBefore);
+    fuel[rand() % NUMPIXELS] += fuelToAdd;
+
+    // make random flames from fuel
+    for (int i = 0; i < NUMPIXELS; i++) {
+      if (fuel[i] > 0) {
+        int maxFuel = min(fuel[i], 255);
+        int useFuel = rand() % maxFuel;
+        fuel[i] -= useFuel;
+        fire[i] += min(useFuel - (rand() % fireDampingAmount), 0);
+        int flame = max(fire[i], 255);
+        uint32_t color = mixColors(0x000000, 0xff8000, 255-flame, flame, 8);
+        strip.setPixelColor(i, color);
+      } else {
+        strip.setPixelColor(i, 0x000000);
+      }
+    }
+  } else if (spriteMode) {
     for (int i = 0; i < NUMPIXELS; i++) {
       strip.setPixelColor(i, spriteBackground);
     }    
@@ -104,10 +136,6 @@ void drawSprite() {
   millisBefore = millisNow;
 }
 
-void updateLeds() {
-  drawSprite();
-}
-
 /**
  * Commands
  * c = clear all pixels
@@ -127,12 +155,16 @@ void updateLeds() {
  * 
  * g = draw a gradiant
  *     format: g[start position][end position][r1][g1][b1][r2][g2][b2]
+ *     
+ * f = animate flames
+ *     format: f[fuel amount][damping amount]
  */
 void processLedCommand(uint8_t line[]) {
   if (line[5] != '?') {
     return;
   }
-  spriteVisible = 0;
+  spriteMode = false;
+  fireMode = false;
   int pos = 6;
   uint8_t command = line[pos++];
   
@@ -190,7 +222,7 @@ void processLedCommand(uint8_t line[]) {
         uint32_t color = getHexColor(pos, line);
         sprite[i] = color;
       }
-      spriteVisible = 1;
+      spriteMode = true;
       break;
     case 'g':
       {
@@ -208,6 +240,12 @@ void processLedCommand(uint8_t line[]) {
         }
         strip.show();
       }
+      break;
+    case 'f':
+      ledStatus = "OK: command p ";
+      fireFuelAmount = getHexByte(pos, line);
+      fireDampingAmount = getHexByte(pos, line);
+      fireMode = true;
       break;
     default:
       ledStatus = "Unknown command";
