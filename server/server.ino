@@ -42,11 +42,11 @@ unsigned long millisBefore = millis();
 int SUBPIXEL_SHIFT = 8;
 int SUBPIXEL_MASK = 0xff;
 
-#define FIRE_FUEL_AMOUNT_MULTIPLIER 64
-#define FIRE_FUEL_PROBABILITY_DIVISOR 16
+#define FIRE_FUEL_AMOUNT_MULTIPLIER 32
+#define FIRE_FUEL_PROBABILITY_DIVISOR 32
 #define FIRE_BLACK 0x000000
 #define FIRE_COLD 0x400000
-#define FIRE_HOT 0xff7000
+#define FIRE_HOT 0xff5000
 bool fireMode = false;
 int fireFuelAmount = 0;
 int fireFuelProbability = 0;
@@ -110,7 +110,11 @@ void updateLeds() {
     // add fuel to random place
     if ((rand() % 256) < fireFuelProbability * delta / FIRE_FUEL_PROBABILITY_DIVISOR) {
       uint32_t fuelToAdd = FIRE_FUEL_AMOUNT_MULTIPLIER * fireFuelAmount * delta;
-      fuel[rand() % NUMPIXELS] += fuelToAdd;
+      int position = rand();
+      fuel[position % NUMPIXELS] += fuelToAdd / 2;
+      fuel[(position + 1) % NUMPIXELS] += fuelToAdd;
+      fuel[(position + 2) % NUMPIXELS] += fuelToAdd;
+      fuel[(position + 3) % NUMPIXELS] += fuelToAdd / 2;
     }
 
     // make random flames from fuel
@@ -121,9 +125,19 @@ void updateLeds() {
         int useFuel = maxFuel > 0 ? (rand() % maxFuel) : 0;
         //int flame = max(255, fire[i]);
         //int flame = min(255, fire[i]);
-        nextFire[i] =         
-          ((fire[i-1] + fire[i] + fire[i+1]) * fireDampingAmount / 3 
-          + useFuel * (255 - fireDampingAmount)) / 255;
+        if (i == 0) {
+          nextFire[i] =         
+            ((fire[i] + fire[i+1]) * fireDampingAmount / 2
+            + useFuel * (255 - fireDampingAmount)) / 255;          
+        } else if (i == NUMPIXELS - 1) {
+          nextFire[i] =         
+            ((fire[i-1] + fire[i]) * fireDampingAmount / 2
+            + useFuel * (255 - fireDampingAmount)) / 255;          
+        } else {
+          nextFire[i] =         
+            ((fire[i-1] + fire[i] + fire[i+1]) * fireDampingAmount / 3 
+            + useFuel * (255 - fireDampingAmount)) / 255;
+        }
         int flame = max(0, min(255, nextFire[i]));
         uint32_t color = flame < 128 ? 
           mixColors(FIRE_BLACK, FIRE_COLD, 127 - flame, flame, 8) 
