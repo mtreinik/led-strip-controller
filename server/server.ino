@@ -41,11 +41,19 @@ unsigned long millisBefore = millis();
 int SUBPIXEL_SHIFT = 8;
 int SUBPIXEL_MASK = 0xff;
 
+#define FIRE_FUEL_AMOUNT_MULTIPLIER 64
+#define FIRE_FUEL_PROBABILITY_DIVISOR 16
+#define FIRE_BLACK 0x000000
+#define FIRE_COLD 0x400000
+#define FIRE_HOT 0xff7000
 bool fireMode = false;
 int fireFuelAmount = 0;
+int fireFuelProbability = 0;
 int fireDampingAmount = 0;
 uint32_t fuel[NUMPIXELS] = { 0 };
+uint32_t nextFuel[NUMPIXELS] = { 0 };
 uint32_t fire[NUMPIXELS] = { 0 };
+uint32_t nextFire[NUMPIXELS] = { 0 };
 
 String ledStatus = "OK";
 
@@ -88,29 +96,45 @@ void updateLeds() {
   if (fireMode) {
     // spread previous fuel
     for (int i = 1; i < NUMPIXELS - 1; i++) {
-      fuel[i] = (fuel[i - 1] + fuel[i] << 1 + fuel[i + 1]) >> 2;
+      nextFuel[i] = (fuel[i - 1] + fuel[i] * 2 + fuel[i + 1]) / 4;
     }
-    fuel[0] = (fuel[NUMPIXELS - 1] + fuel[0] << 1 + fuel[1]) >> 2;
-    fuel[NUMPIXELS-1] = (fuel[NUMPIXELS - 2] + fuel[NUMPIXELS - 1] << 1 + fuel[0]) >> 2;
+    nextFuel[0] = (fuel[NUMPIXELS - 1] + fuel[0] * 2 + fuel[1]) / 4;
+    nextFuel[NUMPIXELS-1] = (fuel[NUMPIXELS - 2] + fuel[NUMPIXELS - 1] * 2 + fuel[0]) / 4;
+    memcpy(fuel, nextFuel, NUMPIXELS * sizeof(uint32_t));
+
+    unsigned long delta = millisNow - millisBefore;
 
     // add fuel to random place
-    int fuelToAdd = fireFuelAmount * (millisNow - millisBefore);
-    fuel[rand() % NUMPIXELS] += fuelToAdd;
+    if ((rand() % 256) < fireFuelProbability * delta / FIRE_FUEL_PROBABILITY_DIVISOR) {
+      uint32_t fuelToAdd = FIRE_FUEL_AMOUNT_MULTIPLIER * fireFuelAmount * delta;
+      fuel[rand() % NUMPIXELS] += fuelToAdd;
+    }
 
     // make random flames from fuel
     for (int i = 0; i < NUMPIXELS; i++) {
       if (fuel[i] > 0) {
-        int maxFuel = min(fuel[i], 255);
-        int useFuel = rand() % maxFuel;
-        fuel[i] -= useFuel;
-        fire[i] += min(useFuel - (rand() % fireDampingAmount), 0);
-        int flame = max(fire[i], 255);
-        uint32_t color = mixColors(0x000000, 0xff8000, 255-flame, flame, 8);
+        int maxFuel = min(255, fuel[i]);
+
+        int useFuel = maxFuel > 0 ? (rand() % maxFuel) : 0;
+        //int flame = max(255, fire[i]);
+        //int flame = min(255, fire[i]);
+        nextFire[i] =         
+          ((fire[i-1] + fire[i] + fire[i+1]) * fireDampingAmount / 3 
+          + useFuel * (255 - fireDampingAmount)) / 255;
+        int flame = max(0, min(255, nextFire[i]));
+        uint32_t color = flame < 128 ? 
+          mixColors(FIRE_BLACK, FIRE_COLD, 127 - flame, flame, 8) 
+          : mixColors(FIRE_COLD, FIRE_HOT, 255 - flame, flame - 128, 8);
         strip.setPixelColor(i, color);
+        
+        fuel[i] -= useFuel;       
       } else {
         strip.setPixelColor(i, 0x000000);
       }
     }
+    memcpy(fire, nextFire, NUMPIXELS * sizeof(uint32_t));
+
+    strip.show();
   } else if (spriteMode) {
     for (int i = 0; i < NUMPIXELS; i++) {
       strip.setPixelColor(i, spriteBackground);
@@ -157,7 +181,7 @@ void updateLeds() {
  *     format: g[start position][end position][r1][g1][b1][r2][g2][b2]
  *     
  * f = animate flames
- *     format: f[fuel amount][damping amount]
+ *     format: f[fuel amount][fuel probability][damping amount]
  */
 void processLedCommand(uint8_t line[]) {
   if (line[5] != '?') {
@@ -190,7 +214,7 @@ void processLedCommand(uint8_t line[]) {
     case 'p':
       {
         ledStatus = "OK: command p ";
-        int pixelPosition = getHexByte(pos, line);
+        int pixelPosition = getHexByte( pos, line);
         uint32_t color = getHexColor(pos, line);
         for (int i = 0; i < NUMPIXELS; i++) {
           strip.setPixelColor(pixelPosition, color);
@@ -226,12 +250,14 @@ void processLedCommand(uint8_t line[]) {
       break;
     case 'g':
       {
+        ledStatus = "OK: command g";
         int startPosition = getHexByte(pos, line);
         int endPosition = getHexByte(pos, line);
         int gradientLength = endPosition - startPosition + 1;
         
         uint32_t startColor = getHexColor(pos, line);
         uint32_t endColor = getHexColor(pos, line);
+
         for (int i = 0; i < gradientLength; i++) {
           int endColorWeight = i * 255 / (gradientLength - 1);
           int startColorWeight = 255 - endColorWeight;
@@ -242,9 +268,14 @@ void processLedCommand(uint8_t line[]) {
       }
       break;
     case 'f':
-      ledStatus = "OK: command p ";
+      ledStatus = "OK: command f";
       fireFuelAmount = getHexByte(pos, line);
+      fireFuelProbability = getHexByte(pos, line);
       fireDampingAmount = getHexByte(pos, line);
+      for (int i = 0; i < NUMPIXELS; i++) {
+        fire[i] = 0;
+        fuel[i] = 0;
+      }
       fireMode = true;
       break;
     default:
