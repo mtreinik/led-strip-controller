@@ -39,8 +39,8 @@ uint32_t spriteBackground = 0x000000;
 uint32_t spritePosition = 0;
 int spriteSpeed = 0;
 unsigned long millisBefore = millis();
-int SUBPIXEL_SHIFT = 8;
-int SUBPIXEL_MASK = 0xff;
+int SUBPIXEL_SHIFT = 12;
+int SUBPIXEL_MASK = 0xfff;
 
 #define FIRE_FUEL_AMOUNT_MULTIPLIER 32
 #define FIRE_FUEL_PROBABILITY_DIVISOR 32
@@ -84,8 +84,6 @@ void setup() {
 
     // wait 12 seconds for connection:
     delay(12000);
-
-    initializeGammaTables();    
   }
   
   // start the web server on port 80
@@ -158,8 +156,8 @@ void updateLeds() {
     }    
     int spritePixelPosition = spritePosition >> SUBPIXEL_SHIFT;
     int spriteSubpixelPosition = spritePosition & SUBPIXEL_MASK;
-    int spriteSubpixelPositionRest = SUBPIXEL_MASK + 1 - spriteSubpixelPosition;
-    
+    int spriteSubpixelPositionRest = SUBPIXEL_MASK - spriteSubpixelPosition;
+
     uint32_t color = mixColors(spriteBackground, sprite[0], spriteSubpixelPosition, spriteSubpixelPositionRest, SUBPIXEL_SHIFT);
     strip.setPixelColor(spritePixelPosition % NUMPIXELS, color);
 
