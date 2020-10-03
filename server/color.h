@@ -1,4 +1,4 @@
-#define GAMMA 2.8
+#define GAMMA 0.36
 #define GAMMA_VALUES 256
 int gammaTable[GAMMA_VALUES]= {};
 int inverseGammaTable[GAMMA_VALUES] = {};
