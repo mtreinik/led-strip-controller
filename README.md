@@ -56,7 +56,17 @@ microcontroller and LED strip (on the right) are connected:
 
 ## Enclosure
 
-I 3D printed an enclosure with a sliding lid for the elecronics:
+Here is everything put together in the enclosure:
+
+![Finished enclosure with all electronics](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/finished-annotated.jpg)
+
+[Image of finished enclosure without annotations](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/finished.jpg)
+
+There is a Micro USB connector for flashing the microcontroller. I
+added a power cord that goes to the other end of the LED strip to make
+sure that all leds receive power evenly.
+
+The enclosure is 3D printed and has a sliding lid.
 
 ![Enclosure for LED controller electronics](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/enclosure.png)
 
