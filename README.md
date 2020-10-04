@@ -47,7 +47,7 @@ The main loop does the following: When a HTTP client is available, it reads
 a line from the request, processes the command and send a response to the 
 HTTP client. Finally the loop updates the LEDs.
 
-Here is a simplified version of the main loop:
+Here is a simplified version of the main loop in `server/server.ino:
 
 ```cpp
 void loop() {
