@@ -4,7 +4,7 @@
 
 Here are instructions for making a LED strip that can be controlled via an Web API.
 
-The strip can show any color with red, green and blue LEDs:
+The strip can show any color combination with red, green and blue LEDs:
 
 ![Red, green and blue color on the LED strip](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/colors.gif)
 
@@ -40,6 +40,8 @@ server. For example `http://<hostname>/?s808000`.
 When the microcontroller starts, it initializes the WiFi shield and the LED 
 strips, then connects a WiFi router and sets up a HTTP server listening on 
 port 80.
+
+Add name and password of your WiFi router in `server/credentials.h`.
 
 The main loop does the following: When a HTTP client is available, it reads 
 a line from the request, processes the command and send a response to the 
