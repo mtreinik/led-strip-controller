@@ -2,13 +2,13 @@
 
 ## Intro
 
-I made a LED strip that can be controlled via an Web API.
+Here are instructions for making a LED strip that can be controlled via an Web API.
 
-Red, green and blue colors:
+The strip can show any color with red, green and blue LEDs:
 
 ![Red, green and blue color on the LED strip](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/colors.gif)
 
-Flame effect:
+LEDs can be controlled individually. Here is a flame effect:
 
 ![Animated flame effect on the LED strip](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/flames.gif)
 
@@ -16,23 +16,50 @@ Flame effect:
 
 ### API
 
-The LED API can receive a number of commands. Parameters for commands
-are given as two-digit hex numbers.
+The LED API can receive a number of commands. Number parameters are given 
+as two-digit hex numbers. Colors are given as three two-digit hex numbers, 
+for red, green and blue color component.
 
-Commands are sent as query parameters for a HTTP GET request to the
+Commands are sent as query parameters of a HTTP GET request to the
 server. For example `http://<hostname>/?s808000`.
 
 
-| Command | Description | Format | Example | Explanation of example |
+| Command | Description | Format | Example | Explanation |
 |---------|-------------|--------|---------|------------------------|
 | c       | clear all pixels | c | c | turns off all pixels |
-| s       | set all pixels to a single color | s[r][g][b] | sff00ff | set all pixels to bright magenta |
-| p       | draw a single pixel | p[position][r][g][b] | p28ffffff | set pixel number 40 (0x28 in hex) to white |
-| a       | set colors from an array | a[number of pixels][r1][g1][b1][r2][g2][b2]... | a03ff0000ffff0000ff00 | set three colors: red, yellow and green |
-| g       | draw a color gradient | g[start position][end position][r1][g1][b1][r2][g2][b2] | g0010ff0000ffff00 | draw a 16 pixel gradient from red to yellow at the start of the led strip |
-| m       | draw a moving sprite | m[background r][background g][background b][size of sprite][sprite position][sprite speed][r1][g1][b1][r2][g2][b2]... | m000000040084000500003000006000ffffff | animate a white pixel with green fading tail quite slowly slowly on a black background |
+| s       | set all pixels to a single color | s[color] | sff00ff | set all pixels to bright magenta |
+| p       | draw a single pixel | p[position][color] | p28ffffff | set pixel number 40 (0x28 in hex) to white |
+| a       | set colors from an array | a[number of pixels][color1][color2]... | a03ff0000ffff0000ff00 | set three colors: red, yellow and green |
+| g       | draw a color gradient | g[start position][end position][color1][color2] | g0010ff0000ffff00 | draw a 16 pixel gradient from red to yellow at the start of the led strip |
+| m       | draw a moving sprite | m[background r][background g][background b][size of sprite][sprite position][sprite speed][color1][color2]... | m000000040084000500003000006000ffffff | animate a white pixel with green fading tail quite slowly slowly on a black background |
 | f       | animate flames        | f[fuel amount][damping amount] | f2f10 | 
 | b       | animate aurora borealis | b[speed][centering][center color][edge color] | b240150ff5005ff05 |
+
+### Implementation
+
+When the microcontroller starts, it initializes the WiFi shield and the LED 
+strips, then connects a WiFi router and sets up a HTTP server listening on 
+port 80.
+
+The main loop does the following: When a HTTP client is available, it reads 
+a line from the request, processes the command and send a response to the 
+HTTP client. Finally the loop updates the LEDs.
+
+Here is a simplified version of the main loop:
+
+```cpp
+void loop() {
+  WiFiClient client = server.available();
+  if (client) {                      
+    currentLine = readLine(client);
+    client.flush();
+    processLedCommand(currentLine);      
+    client.println(httpResponse);
+    client.stop();
+  }
+  updateLeds();
+}
+```
 
 ## Electronics
 
