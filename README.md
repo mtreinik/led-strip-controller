@@ -1,12 +1,22 @@
 # Web controller for RGB led strip
 
-## 
+## Intro
+
+I made a LED strip that can be controlled via an Web API.
+
+Red, green and blue colors:
+
+![Red, green and blue color on the LED strip](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/colors.gif)
+
+Flame effect:
+
+![Animated flame effect on the LED strip](https://raw.githubusercontent.com/mtreinik/led-strip-controller/main/images/flames.gif)
 
 ## Software
 
 ### API
 
-The led API can receive a number of commands. Parameters for commands
+The LED API can receive a number of commands. Parameters for commands
 are given as two-digit hex numbers.
 
 Commands are sent as query parameters for a HTTP GET request to the
