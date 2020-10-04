@@ -1,4 +1,4 @@
-# Web controller for RGB led strip
+# Web accessible Arduino controller for RGB led strip
 
 ## Intro
 
