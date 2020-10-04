@@ -44,7 +44,7 @@ int SUBPIXEL_MASK = 0xfff;
 
 #define FIRE_FUEL_AMOUNT_MULTIPLIER 32
 #define FIRE_FUEL_PROBABILITY_DIVISOR 32
-#define FIRE_BLACK 0x000000
+#define BLACK 0x000000
 #define FIRE_COLD 0x400000
 #define FIRE_HOT 0xff5000
 bool fireMode = false;
@@ -55,6 +55,18 @@ uint32_t fuel[NUMPIXELS] = { 0 };
 uint32_t nextFuel[NUMPIXELS] = { 0 };
 uint32_t fire[NUMPIXELS] = { 0 };
 uint32_t nextFire[NUMPIXELS] = { 0 };
+
+#define AURORA_POSITION_DIVISOR 2048
+#define AURORA_COLOR_ALMOST_OFF 0x000100
+bool auroraMode = false;
+int32_t auroraSpeed = 0;
+int32_t auroraCentering = 0;
+int32_t auroraColorHot = 0;
+int32_t auroraColorCold = 0;
+int32_t auroraAmount = 0;
+int32_t auroraPosition = 0;
+int32_t auroraLeft = 0;
+int32_t auroraRight = 0;
 
 String ledStatus = "OK";
 
@@ -82,8 +94,8 @@ void setup() {
     // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
     status = WiFi.begin(wifiSSID, wifiPassword);
 
-    // wait 12 seconds for connection:
-    delay(12000);
+    // wait 10 seconds for connection:
+    delay(10000);
   }
   
   // start the web server on port 80
@@ -94,6 +106,7 @@ void setup() {
 
 void updateLeds() {
   unsigned long millisNow = millis();
+  unsigned long deltaTime = millisNow - millisBefore;
   if (fireMode) {
     // spread previous fuel
     for (int i = 1; i < NUMPIXELS - 1; i++) {
@@ -103,11 +116,10 @@ void updateLeds() {
     nextFuel[NUMPIXELS-1] = (fuel[NUMPIXELS - 2] + fuel[NUMPIXELS - 1] * 2 + fuel[0]) / 4;
     memcpy(fuel, nextFuel, NUMPIXELS * sizeof(uint32_t));
 
-    unsigned long delta = millisNow - millisBefore;
 
     // add fuel to random place
-    if ((rand() % 256) < fireFuelProbability * delta / FIRE_FUEL_PROBABILITY_DIVISOR) {
-      uint32_t fuelToAdd = FIRE_FUEL_AMOUNT_MULTIPLIER * fireFuelAmount * delta;
+    if ((rand() % 256) < fireFuelProbability * deltaTime / FIRE_FUEL_PROBABILITY_DIVISOR) {
+      uint32_t fuelToAdd = FIRE_FUEL_AMOUNT_MULTIPLIER * fireFuelAmount * deltaTime;
       int position = rand();
       fuel[position % NUMPIXELS] += fuelToAdd / 2;
       fuel[(position + 1) % NUMPIXELS] += fuelToAdd;
@@ -138,7 +150,7 @@ void updateLeds() {
         }
         int flame = max(0, min(255, nextFire[i]));
         uint32_t color = flame < 128 ? 
-          mixColors(FIRE_BLACK, FIRE_COLD, 127 - flame, flame, 8) 
+          mixColors(BLACK, FIRE_COLD, 127 - flame, flame, 8) 
           : mixColors(FIRE_COLD, FIRE_HOT, 255 - flame, flame - 128, 8);
         strip.setPixelColor(i, color);
         
@@ -170,9 +182,70 @@ void updateLeds() {
     strip.setPixelColor((spritePixelPosition+ spriteSize) % NUMPIXELS, color);
     
     strip.show();
-    spritePosition += spriteSpeed * (millisNow - millisBefore);
+    spritePosition += spriteSpeed * deltaTime;
+  } else if (auroraMode) {
+    // animate aurora
+    int speedFactor = auroraSpeed * deltaTime;
+    if (speedFactor > 0) {
+      auroraPosition += (int32_t) (rand() % (speedFactor + speedFactor) - speedFactor);
+      auroraLeft += (int32_t) (rand() % (speedFactor + speedFactor) - speedFactor);
+      auroraRight += (int32_t) (rand() % (speedFactor + speedFactor) - speedFactor);
+
+      int auroraCenter = (auroraLeft + auroraRight) / AURORA_POSITION_DIVISOR;
+      if (auroraCenter < -NUMPIXELS / 6) { 
+        auroraLeft += speedFactor * auroraCentering;
+        auroraRight += speedFactor * auroraCentering;
+      } else if (auroraCenter > NUMPIXELS / 6) {
+        auroraLeft -= speedFactor * auroraCentering;
+        auroraRight -= speedFactor * auroraCentering;
+      }
+    }
+    
+    if (auroraLeft > auroraRight) {
+      int temp = auroraLeft;
+      auroraLeft = auroraRight;
+      auroraRight = temp;
+    }
+    
+    int auroraPositionMin = ((auroraLeft * 3 + auroraRight) / 4);
+    int auroraPositionMax = ((auroraLeft + auroraRight * 3) / 4);
+    if (auroraPosition < auroraPositionMin) {
+      auroraPosition = auroraPositionMin;
+    }
+    if (auroraPosition > auroraPositionMax) {
+      auroraPosition = auroraPositionMax;
+    }
+    
+    int left = max(0, min(255, auroraLeft / AURORA_POSITION_DIVISOR + NUMPIXELS / 2 - 2));
+    int right = max(0, min(255, auroraRight / AURORA_POSITION_DIVISOR + NUMPIXELS / 2 + 2));
+    int pos = max(0, min(255, auroraPosition / AURORA_POSITION_DIVISOR + NUMPIXELS / 2));
+    int leftMid = (left + pos) / 2;
+    int rightMid = (pos + right) / 2;
+
+    for (int i = 0; i < left; i++) {
+      strip.setPixelColor(i, BLACK);
+    }
+    drawGradient(left,     leftMid,      AURORA_COLOR_ALMOST_OFF, auroraColorCold);
+    drawGradient(leftMid+1,  pos-1,      auroraColorCold,         auroraColorHot);
+    drawGradient(pos,      rightMid - 1, auroraColorHot,          auroraColorCold);
+    drawGradient(rightMid, right,        auroraColorCold,         AURORA_COLOR_ALMOST_OFF);
+    for (int i = right+1; i < NUMPIXELS; i++) {
+      strip.setPixelColor(i, BLACK);
+    }
+
+    strip.show();
   }
   millisBefore = millisNow;
+}
+
+void drawGradient(int startPosition, int endPosition, uint32_t startColor, uint32_t endColor) {
+  int gradientLength = endPosition - startPosition + 1;
+  for (int i = 0; i < gradientLength; i++) {
+    int endColorWeight = i * 255 / (gradientLength - 1);
+    int startColorWeight = 255 - endColorWeight;
+    uint32_t color = mixColors(startColor, endColor, startColorWeight, endColorWeight, 8);
+    strip.setPixelColor((startPosition + i) % NUMPIXELS, color);
+  }
 }
 
 /**
@@ -197,6 +270,9 @@ void updateLeds() {
  *     
  * f = animate flames
  *     format: f[fuel amount][fuel probability][damping amount]
+ *
+ * b = aurora borealis
+ *     format: b[strength][speed][hot color][cold color]
  */
 void processLedCommand(uint8_t line[]) {
   if (line[5] != '?') {
@@ -204,6 +280,7 @@ void processLedCommand(uint8_t line[]) {
   }
   spriteMode = false;
   fireMode = false;
+  auroraMode = false;
   int pos = 6;
   uint8_t command = line[pos++];
   
@@ -268,17 +345,11 @@ void processLedCommand(uint8_t line[]) {
         ledStatus = "OK: command g";
         int startPosition = getHexByte(pos, line);
         int endPosition = getHexByte(pos, line);
-        int gradientLength = endPosition - startPosition + 1;
         
         uint32_t startColor = getHexColor(pos, line);
         uint32_t endColor = getHexColor(pos, line);
 
-        for (int i = 0; i < gradientLength; i++) {
-          int endColorWeight = i * 255 / (gradientLength - 1);
-          int startColorWeight = 255 - endColorWeight;
-          uint32_t color = mixColors(startColor, endColor, startColorWeight, endColorWeight, 8);
-          strip.setPixelColor((startPosition + i) % NUMPIXELS, color);
-        }
+        drawGradient(startPosition, endPosition, startColor, endColor);
         strip.show();
       }
       break;
@@ -292,6 +363,18 @@ void processLedCommand(uint8_t line[]) {
         fuel[i] = 0;
       }
       fireMode = true;
+      break;
+    case 'b':
+      ledStatus = "OK: command b";
+      auroraSpeed = getHexByte(pos, line);
+      auroraCentering = getHexByte(pos, line);
+      auroraColorHot = getHexColor(pos, line);
+      auroraColorCold = getHexColor(pos, line);
+      auroraAmount = 0;
+      auroraPosition = 0;
+      auroraLeft = 0;
+      auroraRight = 0;
+      auroraMode = true;
       break;
     default:
       ledStatus = "Unknown command";
