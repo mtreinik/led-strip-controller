@@ -68,7 +68,27 @@ int32_t auroraPosition = 0;
 int32_t auroraLeft = 0;
 int32_t auroraRight = 0;
 
+#define MAXPARTICLES 256
+#define PARTICLE_POS_DIVISOR 256
+bool particleMode = false;
+int particleAmount = 0;
+int particleMaxSpeed = 0;
+int particleMinSpeed = 0;
+int32_t particlePos[MAXPARTICLES] = { 0 };
+int32_t particleSpeed[MAXPARTICLES] = { 0 };
+uint32_t particleColor[MAXPARTICLES] = { 0 };
+
 String ledStatus = "OK";
+
+int getParticleSpeed(int particleMinSpeed, int particleMaxSpeed) {
+  int speed = (rand() % particleMaxSpeed) + particleMinSpeed;
+  if (rand() & 1) {
+    return -speed;
+  }
+  Serial.print("speed: ");
+  Serial.println(speed);
+  return speed;
+}
 
 void setup() {
   //Configure pins for Adafruit ATWINC1500 Feather
@@ -133,8 +153,6 @@ void updateLeds() {
         int maxFuel = min(255, fuel[i]);
 
         int useFuel = maxFuel > 0 ? (rand() % maxFuel) : 0;
-        //int flame = max(255, fire[i]);
-        //int flame = min(255, fire[i]);
         if (i == 0) {
           nextFire[i] =         
             ((fire[i] + fire[i+1]) * fireDampingAmount / 2
@@ -215,10 +233,13 @@ void updateLeds() {
     if (auroraPosition > auroraPositionMax) {
       auroraPosition = auroraPositionMax;
     }
-    
-    int left = max(0, min(255, auroraLeft / AURORA_POSITION_DIVISOR + NUMPIXELS / 2 - 2));
-    int right = max(0, min(255, auroraRight / AURORA_POSITION_DIVISOR + NUMPIXELS / 2 + 2));
-    int pos = max(0, min(255, auroraPosition / AURORA_POSITION_DIVISOR + NUMPIXELS / 2));
+
+    int left = auroraLeft / AURORA_POSITION_DIVISOR + NUMPIXELS / 2 - 2;
+    left = max(0, min(255, left));
+    int right = auroraRight / AURORA_POSITION_DIVISOR + NUMPIXELS / 2 + 2
+    right = max(0, min(255, right));
+    int pos = auroraPosition / AURORA_POSITION_DIVISOR + NUMPIXELS / 2
+    pos = max(0, min(255, pos));
     int leftMid = (left + pos) / 2;
     int rightMid = (pos + right) / 2;
 
@@ -233,6 +254,22 @@ void updateLeds() {
       strip.setPixelColor(i, BLACK);
     }
 
+    strip.show();
+  } else if (particleMode) {
+    for (int i = 0; i < NUMPIXELS; i++) {
+      strip.setPixelColor(i, BLACK);
+    }
+    for (int i = 0; i < particleAmount; i++) {
+      particlePos[i] += particleSpeed[i];
+      int pos = particlePos[i] / PARTICLE_POS_DIVISOR + NUMPIXELS / 2;
+      if (pos < 0 || pos > NUMPIXELS -1) {
+        particlePos[i] = 0;
+        particleSpeed[i] = getParticleSpeed(particleMinSpeed, particleMaxSpeed);
+        particleColor[i] = 0xffffff;
+      } else {
+        strip.setPixelColor(pos, particleColor[i]);
+      }      
+    }
     strip.show();
   }
   millisBefore = millisNow;
@@ -273,6 +310,9 @@ void drawGradient(int startPosition, int endPosition, uint32_t startColor, uint3
  *
  * b = aurora borealis
  *     format: b[strength][speed][hot color][cold color]
+ *
+ * r = animate particles
+ *     format: r[min speed][max speed]
  */
 void processLedCommand(uint8_t line[]) {
   if (line[5] != '?') {
@@ -281,6 +321,7 @@ void processLedCommand(uint8_t line[]) {
   spriteMode = false;
   fireMode = false;
   auroraMode = false;
+  particleMode = false;
   int pos = 6;
   uint8_t command = line[pos++];
   
@@ -376,6 +417,25 @@ void processLedCommand(uint8_t line[]) {
       auroraRight = 0;
       auroraMode = true;
       break;
+    case 'r':
+      ledStatus = "OK: command r";
+      particleAmount = getHexByte(pos, line);
+      particleAmount = min(MAXPARTICLES, particleAmount);
+      particleMinSpeed = getHexByte(pos, line);
+      particleMaxSpeed = getHexByte(pos, line);      
+      for (int i = 0; i < particleAmount; i++) {
+        particlePos[i] = 0;
+        particleSpeed[i] = getParticleSpeed(particleMinSpeed, particleMaxSpeed);
+        particleColor[i] = 0xffffff;
+      }
+      Serial.print("particleAmount: ");
+      Serial.print(particleAmount);
+      Serial.print(" particleMinSpeed: ");
+      Serial.print(particleMinSpeed);
+      Serial.print(" particleMaxSpeed: ");
+      Serial.print(particleMaxSpeed);
+      particleMode = true;
+      break;
     default:
       ledStatus = "Unknown command";
       Serial.println("Unknown command");
@@ -452,14 +512,11 @@ void loop() {
       // disconnect client
       client.stop();
       Serial.println("client disonnected");
-
-      updateLeds();    
     } else {
       Serial.println("not connected");
     }
-  } else {
-    updateLeds();
-  }
+  } 
+  updateLeds();
 }
 
 void printWiFiStatusToSerialPort() {
